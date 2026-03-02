@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import CourtCard from "./components/CourtCard";
+import BookingModal from "./components/BookingModal";
+import SuccessPopup from "./components/SuccessPopup";
 import './App.css';
 
 function App() {
@@ -26,6 +28,7 @@ const [showDeposit, setShowDeposit] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [generatedOtp, setGeneratedOtp] = useState("");
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 // ✅ đặt calculatePrice lên trên
 const calculatePrice = (court, hour, duration = 1) => {
   if (!court || !hour) return 0;
@@ -424,17 +427,45 @@ const tuChoi = (id) => {
 };
 
   // --- BỔ SUNG LOGIC ĐẶT SÂN ---
-  const handleBooking = (court) => {
+const handleBooking = (court) => {
+
+  // 1️⃣ Kiểm tra đăng nhập
+  if (!isLoggedIn) {
+    setShowLoginNotice(true);
+    return;
+  }
+
+  // 2️⃣ Kiểm tra đã upload ảnh chưa
   if (!paymentProof[court.id]) {
     alert("Vui lòng tải ảnh chuyển khoản trước khi đặt sân!");
     return;
   }
 
-  alert("Đã gửi yêu cầu đặt sân! Chờ admin xác nhận.");
-  if (!isLoggedIn) {
-    setShowLoginNotice(true);
-    return;
-  }
+  // 3️⃣ Cập nhật trạng thái sân = Đang chờ duyệt
+  setSchedule(prev => ({
+    ...prev,
+    [court.id]: {
+      ...prev[court.id],
+      [selectedDate]: {
+        ...prev[court.id]?.[selectedDate],
+        [selectedHour]: "Đang chờ duyệt"
+      }
+    }
+  }));
+
+  // 4️⃣ Thêm thông báo cho user
+  addNotification(
+    `Bạn đã gửi yêu cầu đặt ${court.name} thành công`
+  );
+
+  // 5️⃣ Hiện popup thành công
+  setShowSuccessPopup(true);
+
+  // 6️⃣ Reset form + đóng modal
+  setSelectedCourt(null);
+  setSelectedDate("");
+  setSelectedHour("");
+  setShowDepositStep(false);
   const guiYeuCauDatSan = (court) => {
 
   const user = JSON.parse(localStorage.getItem("currentUser"));
@@ -981,144 +1012,22 @@ HOÀN TẤT ĐĂNG KÝ
             <section className="court-section">
               <div className="court-grid">
   {courts.map(court => (
-    <div className="court-card" key={court.id}>
-  {/* ICON YÊU THÍCH */}
-  <div
-    className={`favorite-icon ${favorites.includes(court.id) ? "active" : ""}`}
-    onClick={() => toggleFavorite(court.id)}
-  >
-    ❤
-  </div>
-      
-      <img src={court.image} alt={court.name} className="court-img" />
+  <CourtCard
+  key={court.id}
+  court={court}
+  favorites={favorites}      // 👈 DÒNG NÀY
+  toggleFavorite={toggleFavorite}
+    onViewCourt={(court) => {
 
-      <div className="court-content">
-        <div className="court-title">{court.name}</div>
+      if (!isLoggedIn) {
+        setShowLoginNotice(true);
+        return;
+      }
 
-<p className="court-desc">
-  {court.desc}
-</p>
-
-        {/* NÚT XEM SÂN */}
-        {expandedCourt !== court.id && (
-         <button
-  className="btn-view-court"
-  onClick={() => {
-
-    if (!isLoggedIn) {
-      setShowLoginNotice(true);
-      return;
-    }
-
-    setSelectedCourt(court);
-    setDuration(1);
-    setSelectedHour("");
-    setSelectedDate("");
-    setShowDepositStep(false);
-
-  }}
->
-  XEM SÂN NGAY
-</button>
-        )}
-
-        {/* KHI BẤM XEM SÂN */}
-        {expandedCourt === court.id && (
-          <>
-            <div className="form-group">
-              <label>Chọn ngày:</label>
-              <input
-  type="date"
-  value={selectedDate}
-  min={new Date().toISOString().split("T")[0]}
-  onChange={(e) => setSelectedDate(e.target.value)}
-  style={{
-    padding: "10px",
-    borderRadius: "8px",
-    border: "1px solid #ccc",
-    width: "100%",
-    fontSize: "16px"
-  }}
-/>
-            </div>
-
-            <button
-  className="btn-book"
-  
-  disabled={
-    schedule[selectedCourt?.id]?.[selectedDate]?.[selectedHour] === "Đã đặt"
-  }
-  style={{
-    background:
-      schedule[selectedCourt?.id]?.[selectedDate]?.[selectedHour] === "Đã đặt"
-        ? "#ccc"
-        : "#16a34a"
-  }}
-  onClick={() => {
-
-  if (!isLoggedIn) {
-    setShowLoginNotice(true);
-    return;
-  }
-
-  setShowDepositStep(true);
-
-}}
->
-  TIẾP TỤC ĐẶT SÂN
-</button>
-          </>
-        )}
-
-        {/* PHẦN ĐẶT CỌC */}
-        {showDeposit === court.id && (
-         <div className="deposit-box">
-  <h3>💳 ĐẶT CỌC 50%</h3>
-
-  <div className="bank-info">
-    <div><span>Ngân hàng:</span> Vietcombank</div>
-    <div><span>Số tài khoản:</span> 0123456789</div>
-    <div><span>Chủ tài khoản:</span> NGUYEN VAN A</div>
-    <div><span>Nội dung:</span> DAT_SAN_{selectedCourt?.id}</div>
-  </div>
-
-  <label className="upload-label">Tải ảnh xác nhận chuyển khoản</label>
-
-  <input
-    type="file"
-    accept="image/*"
-    onChange={(e) => handleUpload(e, selectedCourt?.id)}
+      setSelectedCourt(court);
+    }}
   />
-
-            {paymentProof[selectedCourt?.id] && (
-              <>
-                <p style={{color:"green", marginTop:"10px"}}>
-                  ✅ Đã tải ảnh chuyển khoản thành công
-                </p>
-
-                <button
-                  className="btn-book"
-                  onClick={() => {
-
-  if (!isLoggedIn) {
-    setShowLoginNotice(true);
-    return;
-  }
-
-  handleBooking(court);
-
-}}
-                >
-                  GỬI XÁC NHẬN ĐẶT SÂN
-                </button>
-              </>
-            )}
-          </div>
-        )}
-
-      </div>
-    </div>
-  ))}
+))}
 </div>
             </section>
           </>
@@ -1369,7 +1278,10 @@ HOÀN TẤT ĐĂNG KÝ
       <button
   onClick={() => {
     setShowDepositStep(false);
-    setSelectedCourt(null);
+   setSelectedCourt(null);
+setSelectedDate("");
+setSelectedHour("");
+setShowDepositStep(false);
   }}
   style={{
     position: "absolute",
@@ -1424,6 +1336,9 @@ HOÀN TẤT ĐĂNG KÝ
   <div className="modal-overlay" onClick={() => {
 
     setSelectedCourt(null);
+setSelectedDate("");
+setSelectedHour("");
+setShowDepositStep(false);
     setShowDepositStep(false);
   }}>
     <div
@@ -1438,7 +1353,10 @@ HOÀN TẤT ĐĂNG KÝ
     if (showDepositStep) {
       setShowDepositStep(false); // quay lại bước chọn giờ
     } else {
-      setSelectedCourt(null); // quay lại danh sách sân
+      setSelectedCourt(null);
+setSelectedDate("");
+setSelectedHour("");
+setShowDepositStep(false); // quay lại danh sách sân
     }
   }}
 >
@@ -1829,8 +1747,30 @@ HOÀN TẤT ĐĂNG KÝ
     </div>
   </div>
 )}
+    <BookingModal
+    
+  selectedCourt={selectedCourt}
+  selectedDate={selectedDate}
+  setSelectedDate={setSelectedDate}
+  selectedHour={selectedHour}
+  setSelectedHour={setSelectedHour}
+  showDepositStep={showDepositStep}
+  setShowDepositStep={setShowDepositStep}
+  handleUpload={handleUpload}
+  paymentProof={paymentProof}
+  handleBooking={handleBooking}
+  schedule={schedule}
+  setSelectedCourt={setSelectedCourt}
+/>
+
+{showSuccessPopup && (
+  <SuccessPopup
+    onClose={() => setShowSuccessPopup(false)}
+  />
+)}
     </div>
   );
   
 }
+
 export default App;
