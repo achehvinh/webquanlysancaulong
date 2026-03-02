@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import CourtCard from "./components/CourtCard";
 import './App.css';
 
 function App() {
