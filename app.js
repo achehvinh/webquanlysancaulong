@@ -65,17 +65,6 @@ const [accounts, setAccounts] = useState(
   JSON.parse(localStorage.getItem("accounts")) || []
 );
 const [showUserMenu, setShowUserMenu] = useState(false);
-{showSuccessModal && (
-  <div className="success-overlay">
-    <div className="success-modal">
-      <h2>Gửi yêu cầu đặt sân thành công</h2>
-      <p>Yêu cầu đặt sân đã gửi. Chờ quản lý duyệt.</p>
-      <button onClick={() => setShowSuccessModal(false)}>
-        Đóng
-      </button>
-    </div>
-  </div>
-)}
 
 
   // --- BỔ SUNG STATES CHO ĐẶT SÂN & DOANH THU ---
@@ -242,11 +231,6 @@ useEffect(() => {
   password: "",
   otp: ""
 });
-const bookedSlots = {
-  "2026-03-02": ["07:00","08:00","18:00"],
-  "2026-03-03": ["17:00","19:00"]
-};
-
 const handleSendOtp = () => {
 
   if (!registerData.phone) {
@@ -262,6 +246,21 @@ const handleSendOtp = () => {
   localStorage.setItem("generatedOtp", otp);
 
   alert("Mã OTP của bạn là: " + otp);
+};
+
+// ==== DANH SÁCH GIỜ CHƠI ====
+const timeSlots = [
+  "08:00","09:00","10:00",
+  "14:00","15:00","16:00",
+  "17:00","18:00","19:00",
+  "20:00","21:00"
+];
+
+// ==== GIỜ ĐÃ ĐẶT (mẫu / chưa connect DB) ====
+const bookedSlots = {
+  // ví dụ: ngày 2026-03-02 đã có người đặt 07 & 08
+  "2026-03-02": ["07:00","08:00","18:00"],
+  "2026-03-03": ["17:00","19:00"]
 };
 
   // --- 4. HANDLERS ---
@@ -342,21 +341,6 @@ const isSlotBooked = (courtId, date, hour) => {
     </div>
   )}
 </div>
-
-{/* Nút bấm Đặt sân cần được Disable nếu giờ đã bị đặt */}
-<button
-  className="btn-continue"
-  disabled={!selectedDate || !selectedHour || isSlotBooked(selectedCourt?.id, selectedDate, selectedHour)}
-  style={{
-    backgroundColor: (!selectedDate || !selectedHour || isSlotBooked(selectedCourt?.id, selectedDate, selectedHour)) 
-      ? "#ccc" 
-      : "#16a34a",
-    cursor: (selectedCourt && isSlotBooked(selectedCourt.id, selectedDate, selectedHour)) ? "not-allowed" : "pointer"
-  }}
-  onClick={() => setShowDepositStep(true)}
->
-  {(selectedCourt && isSlotBooked(selectedCourt.id, selectedDate, selectedHour)) ? "HẾT CHỖ" : "TIẾP TỤC ĐẶT SÂN"}
-</button>
 // --- Sửa lại hàm gửi yêu cầu đặt sân để lưu đủ thông tin ---
 const guiYeuCauDatSan = (court) => {
   if (!court) return; // Bảo vệ nếu court bị null
@@ -1408,15 +1392,6 @@ HOÀN TẤT ĐĂNG KÝ
           <div style={{ color: "green" }}>● Khung giờ còn trống</div>
         )}
       </div>
-
-      <button
-        className="btn-continue"
-        /* ✅ Thêm dấu ? để an toàn */
-        disabled={!selectedDate || !selectedHour || isSlotBooked(selectedCourt?.id, selectedDate, selectedHour)}
-        onClick={() => setShowDepositStep(true)}
-      >
-        {isSlotBooked(selectedCourt?.id, selectedDate, selectedHour) ? "HẾT CHỖ" : "TIẾP TỤC ĐẶT SÂN"}
-      </button>
       
       <button onClick={() => setSelectedCourt(null)}>ĐÓNG</button>
     </div>
@@ -1554,36 +1529,61 @@ HOÀN TẤT ĐĂNG KÝ
           </div>
 
 <div className="form-group">
-  
   <label>Chọn giờ bắt đầu:</label>
-  <select
-    value={selectedHour}
-    onChange={(e) => setSelectedHour(e.target.value)}
-  >
-    <option value="">-- Chọn giờ --</option>
-    <option value="08">08:00 - 09:00</option>
-    <option value="09">09:00 - 10:00</option>
-    <option value="10">10:00 - 11:00</option>
-    <option value="11">11:00 - 12:00</option>
-    <option value="12">12:00 - 13:00</option>
-    <option value="13">13:00 - 14:00</option>
-    <option value="14">14:00 - 15:00</option>
-    <option value="15">15:00 - 16:00</option>
-    <option value="16">16:00 - 17:00</option>
-    <option value="17">17:00 - 18:00</option>
-    <option value="18">18:00 - 19:00</option>
-    <option value="19">19:00 - 20:00</option>
-    <option value="20">20:00 - 21:00</option>
-    <option value="21">21:00 - 22:00</option>
-  </select>
+
+  <div style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    gap: "10px"
+  }}>
+
+    {timeSlots.map((time) => {
+      const isBooked =
+        bookedSlots[selectedDate]?.includes(time);
+
+      return (
+        <button
+          key={time}
+          disabled={isBooked}
+          onClick={() => setSelectedHour(time)}
+          style={{
+            padding: "8px",
+            borderRadius: "8px",
+            border:
+              selectedHour === time
+                ? "2px solid #16a34a"
+                : "1px solid #ccc",
+            backgroundColor: isBooked
+              ? "#f3f3f3"
+              : selectedHour === time
+              ? "#16a34a"
+              : "#fff",
+            color: isBooked
+              ? "#999"
+              : selectedHour === time
+              ? "#fff"
+              : "#000",
+            cursor: isBooked ? "not-allowed" : "pointer",
+            fontWeight: "500"
+          }}
+        >
+          {time}
+          {isBooked && " (Đã đặt)"}
+        </button>
+      );
+    })}
+
+  </div>
 </div>
 
           <button
-            className="btn-book"
-            onClick={() => setShowDepositStep(true)}
-          >
-            TIẾP TỤC ĐẶT SÂN
-          </button>
+  className="btn-book"
+  disabled={!selectedDate || !selectedHour}
+  onClick={() => setShowDepositStep(true)}
+  style={{ opacity: (!selectedDate || !selectedHour) ? 0.6 : 1 }}
+>
+  TIẾP TỤC ĐẶT SÂN
+</button>
         </>
       )}
 
