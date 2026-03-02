@@ -242,6 +242,10 @@ useEffect(() => {
   password: "",
   otp: ""
 });
+const bookedSlots = {
+  "2026-03-02": ["07:00","08:00","18:00"],
+  "2026-03-03": ["17:00","19:00"]
+};
 
 const handleSendOtp = () => {
 
@@ -1040,18 +1044,18 @@ HOÀN TẤT ĐĂNG KÝ
             <div className="form-group">
               <label>Chọn ngày:</label>
               <input
-                type="date"
-                value={bookingData[court.id]?.date || ""}
-                onChange={(e) =>
-                  setBookingData({
-                    ...bookingData,
-                    [court.id]: {
-                      ...bookingData[court.id],
-                      date: e.target.value
-                    }
-                  })
-                }
-              />
+  type="date"
+  value={selectedDate}
+  min={new Date().toISOString().split("T")[0]}
+  onChange={(e) => setSelectedDate(e.target.value)}
+  style={{
+    padding: "10px",
+    borderRadius: "8px",
+    border: "1px solid #ccc",
+    width: "100%",
+    fontSize: "16px"
+  }}
+/>
             </div>
 
             <button
@@ -1550,6 +1554,7 @@ HOÀN TẤT ĐĂNG KÝ
           </div>
 
 <div className="form-group">
+  
   <label>Chọn giờ bắt đầu:</label>
   <select
     value={selectedHour}
