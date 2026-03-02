@@ -61,6 +61,8 @@
     );
   };
 
+  
+
   const [avatar, setAvatar] = useState(
     localStorage.getItem("avatar") || null
   );
@@ -103,6 +105,10 @@
     }
 
   }, []);
+
+  useEffect(() => {
+  localStorage.setItem("schedule", JSON.stringify(schedule));
+}, [schedule]);
 
   const addNotification = (message) => {
 
