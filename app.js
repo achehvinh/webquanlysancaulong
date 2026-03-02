@@ -368,7 +368,6 @@ const guiYeuCauDatSan = (court) => {
   
   addNotification(`Yêu cầu đặt ${court.name} vào ${selectedHour}:00 ngày ${selectedDate} thành công!`);
   setShowSuccessModal(true);
-  setSelectedCourt(null); 
 };
 
   const account = accounts.find(
@@ -1363,8 +1362,31 @@ HOÀN TẤT ĐĂNG KÝ
 
 {/* PHẦN MODAL CHI TIẾT SÂN (Thêm kiểm tra selectedCourt && ...) */}
 {selectedCourt && (
+  
   <div className="court-modal-overlay">
     <div className="court-modal">
+      <button
+  onClick={() => {
+    setShowDepositStep(false);
+    setSelectedCourt(null);
+  }}
+  style={{
+    position: "absolute",
+    top: "10px",
+    right: "15px",
+    background: "#ef4444",
+    color: "white",
+    border: "none",
+    borderRadius: "50%",
+    width: "32px",
+    height: "32px",
+    fontSize: "18px",
+    fontWeight: "bold",
+    cursor: "pointer"
+  }}
+>
+  ×
+</button>
       <h2>{selectedCourt.name}</h2>
       
       {/* Ô chọn ngày */}
@@ -1399,6 +1421,7 @@ HOÀN TẤT ĐĂNG KÝ
 )}
   {selectedCourt && (
   <div className="modal-overlay" onClick={() => {
+
     setSelectedCourt(null);
     setShowDepositStep(false);
   }}>
@@ -1666,49 +1689,48 @@ HOÀN TẤT ĐĂNG KÝ
               />
 
 <button
-  className="btn-book"
-  onClick={() => {
+      className="btn-book"
+      onClick={() => {
 
-    if (!selectedDate || !selectedHour) {
-      alert("Vui lòng chọn ngày và giờ!");
-      return;
-    }
+        if (!selectedDate || !selectedHour) {
+          alert("Vui lòng chọn ngày và giờ!");
+          return;
+        }
 
-    if (!paymentProof[selectedCourt.id]) {
-      alert("Vui lòng tải ảnh chuyển khoản!");
-      return;
-    }
+        if (!paymentProof[selectedCourt.id]) {
+          alert("Vui lòng tải ảnh chuyển khoản!");
+          return;
+        }
 
-    const newRequest = {
-      id: Date.now(),
-      customerName: user?.name,
-      courtId: selectedCourt.id,
-      courtName: selectedCourt.name,
-      date: selectedDate,
-      hour: selectedHour,
-      duration: duration,
-      total: calculatePrice(selectedCourt, selectedHour, duration),
-      proof: paymentProof[selectedCourt.id],
-      status: "pending"
-    };
+        const newRequest = {
+          id: Date.now(),
+          customerName: user?.name,
+          courtId: selectedCourt.id,
+          courtName: selectedCourt.name,
+          date: selectedDate,
+          hour: selectedHour,
+          duration: duration,
+          total: calculatePrice(selectedCourt, selectedHour, duration),
+          proof: paymentProof[selectedCourt.id],
+          status: "pending"
+        };
 
-    const updated = [...bookingRequests, newRequest];
+        const updated = [...bookingRequests, newRequest];
 
-    setBookingRequests(updated);
+        setBookingRequests(updated);
 
-    localStorage.setItem(
-      "bookingRequests",
-      JSON.stringify(updated)
-    );
+        localStorage.setItem(
+          "bookingRequests",
+          JSON.stringify(updated)
+        );
 
-    setShowSuccessModal(true);
+        setShowSuccessModal(true);
 
-    setSelectedCourt(null);
 
-  }}
->
-  GỬI YÊU CẦU ĐẶT SÂN
-</button>
+      }}
+    >
+      GỬI YÊU CẦU ĐẶT SÂN
+    </button>
             </>
           )}
         </div>
