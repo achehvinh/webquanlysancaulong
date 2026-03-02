@@ -45,6 +45,8 @@
     return pricePerHour * duration;
   };
 
+    useEffect(() => {   localStorage.setItem("schedule", JSON.stringify(schedule)); }, [schedule]);
+
   // ✅ Sửa lại biến depositAmount để không bị crash khi selectedCourt là null
   const depositAmount = (selectedCourt && selectedHour)
     ? Math.floor(calculatePrice(selectedCourt, selectedHour, duration) * 0.5)
@@ -83,6 +85,13 @@
     JSON.parse(localStorage.getItem("bookingRequests")) || []
   );
 
+  const cancelBooking = (id) => {
+  const updated = bookingRequests.filter(req => req.id !== id);
+
+  setBookingRequests(updated);
+  localStorage.setItem("bookingRequests", JSON.stringify(updated));
+};
+
   // 🔔 THÔNG BÁO ADMIN
   const [showNotification, setShowNotification] = useState(false);
 
@@ -105,10 +114,6 @@
     }
 
   }, []);
-
-  useEffect(() => {
-  localStorage.setItem("schedule", JSON.stringify(schedule));
-}, [schedule]);
 
   const addNotification = (message) => {
 
@@ -1039,26 +1044,60 @@
             </>
           )}
 
-          {/* BỔ SUNG GIAO DIỆN LỊCH SỬ CHO KHÁCH HÀNG */}
-          {page === 'my-bookings' && (
-            
-            <section style={{padding: '50px 10%'}}>
-              <h2 style={{color: 'var(--green)'}}>LỊCH SỬ ĐẶT SÂN</h2>
-              <table className="admin-table">
-                <thead>
-                  <tr><th>Sân</th><th>Thời gian</th><th>Giá</th><th>Trạng thái</th></tr>
-                </thead>
-                <tbody>
-                  {bookings.filter(b => b.customerName === user?.name).map(b => (
-                    <tr key={b.id}>
-                      <td>{b.courtName}</td><td>{b.time}</td><td>{b.price.toLocaleString()}đ</td>
-                      <td style={{color: b.status === 'Thành công' ? 'green' : 'orange'}}>{b.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-          )}
+         {page === 'my-bookings' && (
+  <section style={{ padding: "40px 10%" }}>
+    <h2 style={{ color: "var(--green)" }}>LỊCH SỬ ĐẶT SÂN</h2>
+
+    {bookingRequests.filter(req => req.customerName === user?.name).length === 0 ? (
+      <p>📭 Bạn chưa có yêu cầu đặt sân nào.</p>
+    ) : (
+
+      <table className="admin-table">
+        <thead>
+          <tr>
+            <th>Sân</th>
+            <th>Ngày</th>
+            <th>Giờ</th>
+            <th>Trạng thái</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {bookingRequests.filter(req => req.customerName === user?.name).map(req => (
+            <tr key={req.id}>
+              <td>{req.courtName}</td>
+              <td>{req.date}</td>
+              <td>{req.hour}:00</td>
+              <td style={{
+                color: req.status === "approved" ? "green" :
+                       req.status === "rejected" ? "red" : "orange"
+              }}>
+                {req.status === "approved"
+                  ? "Đã duyệt"
+                  : req.status === "rejected"
+                  ? "Đã hủy"
+                  : "Đang chờ duyệt"}
+              </td>
+
+              <td>
+                {req.status === "pending" && (
+                  <button
+                    className="btn-cancel"
+                    onClick={() => cancelBooking(req.id)}
+                  >
+                    Hủy yêu cầu
+                  </button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+    )}
+  </section>
+)}
           {page === 'notifications' && isLoggedIn && user.role === 'customer' && (
     <section style={{padding:'50px 10%'}}>
 
