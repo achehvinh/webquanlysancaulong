@@ -2,6 +2,7 @@
   import CourtCard from "./components/CourtCard";
   import BookingModal from "./components/BookingModal";
   import SuccessPopup from "./components/SuccessPopup";
+  import BookingHistory from "./components/BookingHistory";
   import './App.css';
 
   function App() {
@@ -20,6 +21,7 @@
   const [showDeposit, setShowDeposit] = useState(null);
     const [otpSent, setOtpSent] = useState(false);
     const [selectedCourt, setSelectedCourt] = useState(null);
+    const [bookingHistory, setBookingHistory] = useState([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [showLoginNotice, setShowLoginNotice] = useState(false);
     const [user, setUser] = useState(null);
@@ -29,7 +31,11 @@
     const [notifications, setNotifications] = useState([]);
     const [generatedOtp, setGeneratedOtp] = useState("");
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-  
+    
+  const hours = [
+  "05","06","07","08","09","10","11","12",
+  "13","14","15","16","17","18","19","20","21"
+];
   // ✅ đặt calculatePrice lên trên
   const calculatePrice = (court, hour, duration = 1) => {
     if (!court || !hour) return 0;
@@ -62,7 +68,10 @@
     );
   };
 
-  
+  <BookingHistory
+  bookingHistory={bookingHistory}
+  setBookingHistory={setBookingHistory}
+/>
 
   const [avatar, setAvatar] = useState(
     localStorage.getItem("avatar") || null
@@ -441,116 +450,60 @@
 
     // --- BỔ SUNG LOGIC ĐẶT SÂN ---
   const handleBooking = (court) => {
+  if (!selectedDate || !selectedHour) {
+    alert("Vui lòng chọn ngày và giờ!");
+    return;
+  }
 
-    // 1️⃣ Kiểm tra đăng nhập
-    if (!isLoggedIn) {
-      setShowLoginNotice(true);
-      return;
-    }
+  const updated = { ...schedule };
 
-    // 2️⃣ Kiểm tra đã upload ảnh chưa
-    if (!paymentProof[court.id]) {
-      alert("Vui lòng tải ảnh chuyển khoản trước khi đặt sân!");
-      return;
-    }
+  if (!updated[court.id]) updated[court.id] = {};
+  if (!updated[court.id][selectedDate]) updated[court.id][selectedDate] = {};
 
-    // 3️⃣ Cập nhật trạng thái sân = Đang chờ duyệt
-    setSchedule(prev => ({
-      ...prev,
-      [court.id]: {
-        ...prev[court.id],
-        [selectedDate]: {
-          ...prev[court.id]?.[selectedDate],
-          [selectedHour]: "Đang chờ duyệt"
-        }
-      }
-    }));
+  const hours = [
+    "05","06","07","08","09","10","11","12",
+    "13","14","15","16","17","18","19","20","21"
+  ];
 
-    // 4️⃣ Thêm thông báo cho user
-    addNotification(
-      `Bạn đã gửi yêu cầu đặt ${court.name} thành công`
-    );
+  const startIndex = hours.indexOf(selectedHour);
 
-    // 5️⃣ Hiện popup thành công
-    setShowSuccessPopup(true);
+  let total = 0;
 
-    // 6️⃣ Reset form + đóng modal
-    setSelectedCourt(null);
-    setSelectedDate("");
-    setSelectedHour("");
-    setShowDepositStep(false);
-    const guiYeuCauDatSan = (court) => {
+  for (let i = 0; i < duration; i++) {
+    const hour = hours[startIndex + i];
+    updated[court.id][selectedDate][hour] = "pending";
 
-    const user = JSON.parse(localStorage.getItem("currentUser"));
+    const hourNumber = Number(hour);
+    const price =
+      hourNumber >= 17
+        ? Math.floor(court.price * 1.3)
+        : court.price;
 
-    if (!user) {
-      alert("Vui lòng đăng nhập trước!");
-      return;
-    }
-    addNotification(
-    `Bạn đã gửi yêu cầu đặt ${court.name} thành công`
-  );
+    total += price;
+  }
 
-    const newRequest = {
+  setSchedule(updated);
 
-      id: Date.now(),
-
-      customerName: user?.name,
-
-      courtName: court.name,
-
-      price: court.price,
-
-      image: court.image,
-
-      status: "pending"
-
-    };
-
-    
-
-    const updated = [...bookingRequests, newRequest];
-
-    setBookingRequests(updated);
-
-    localStorage.setItem("bookingRequests", JSON.stringify(updated));
-
-    setShowPopup(true);
+  // LƯU VÀO LỊCH SỬ
+  const newBooking = {
+    id: Date.now(),
+    courtName: court.name,
+    courtId: court.id,
+    date: selectedDate,
+    hour: selectedHour,
+    duration: duration,
+    total: total,
+    status: "Chờ duyệt"
   };
 
-    const courtBooking = bookingData[court.id];
+  setBookingHistory([...bookingHistory, newBooking]);
 
-    if (!courtBooking?.date || !courtBooking?.hour) {
-      alert("Vui lòng chọn ngày và giờ!");
-      return;
-    }
-
-    const newBooking = {
-      
-      id: Date.now(),
-      courtName: court.name,
-      customerName: user?.name,
-      price: court.price,
-      status: "Chờ duyệt",
-      time: `${courtBooking.date} - ${courtBooking.hour}:00`
-    };
-
-    setBookings([...bookings, newBooking]);
-
-    setCourts(
-      courts.map(c =>
-        c.id === court.id ? { ...c, status: "Chờ duyệt" } : c
-      )
-    );
-
-    // reset ngày giờ sân đó
-    setBookingData({
-      ...bookingData,
-      [court.id]: {}
-    });
-
-    alert(`Yêu cầu đặt ${court.name} thành công!`);
-  };
+  setSelectedDate("");
+  setSelectedHour("");
+  setDuration(1);
+  setShowDepositStep(false);
+  setSelectedCourt(null);
+};
     // --- BỔ SUNG LOGIC DUYỆT ĐƠN (ADMIN) ---
     const approveBooking = (bookingId, courtName, price) => {
       setBookings(bookings.map(b => b.id === bookingId ? {...b, status: "Thành công"} : b));
