@@ -1355,13 +1355,40 @@
           onChange={(e) => setSelectedDate(e.target.value)} 
         />
 
-        {/* Ô chọn giờ */}
-        <select value={selectedHour} onChange={(e) => setSelectedHour(e.target.value)}>
-          <option value="">-- Chọn giờ --</option>
-          <option value="17">17:00</option>
-          <option value="18">18:00</option>
-          {/* ... các option khác */}
-        </select>
+        {/* Ô chọn giờ đẹp hơn */}
+<div style={{
+  display: "grid",
+  gridTemplateColumns: "repeat(4, 1fr)",
+  gap: "10px",
+  marginTop: "15px"
+}}>
+  {["17","18","19","20","21","22"].map((hour) => {
+    const booked = isSlotBooked(selectedCourt.id, selectedDate, hour);
+
+    return (
+      <button
+        key={hour}
+        disabled={booked}
+        onClick={() => setSelectedHour(hour)}
+        style={{
+          padding: "10px",
+          borderRadius: "8px",
+          border: "none",
+          cursor: booked ? "not-allowed" : "pointer",
+          background: booked
+            ? "#dc2626"
+            : selectedHour === hour
+            ? "#16a34a"
+            : "#e5e7eb",
+          color: booked || selectedHour === hour ? "white" : "black",
+          fontWeight: "bold"
+        }}
+      >
+        {hour}:00
+      </button>
+    );
+  })}
+</div>
 
         {/* ✅ KIỂM TRA TRÙNG LỊCH AN TOÀN */}
         <div className="booking-status">
@@ -1374,7 +1401,25 @@
           )}
         </div>
         
-        <button onClick={() => setSelectedCourt(null)}>ĐÓNG</button>
+        <button
+  disabled={!selectedDate || !selectedHour || isSlotBooked(selectedCourt.id, selectedDate, selectedHour)}
+  style={{
+    marginTop: "20px",
+    width: "100%",
+    padding: "12px",
+    background: "#16a34a",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontWeight: "bold",
+    cursor: "pointer"
+  }}
+  onClick={() => {
+    alert("Đặt sân thành công!");
+  }}
+>
+  XÁC NHẬN ĐẶT SÂN
+</button>
       </div>
     </div>
   )}
