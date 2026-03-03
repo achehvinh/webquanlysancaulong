@@ -45,8 +45,6 @@
     return pricePerHour * duration;
   };
 
-    useEffect(() => {   localStorage.setItem("schedule", JSON.stringify(schedule)); }, [schedule]);
-
   // ✅ Sửa lại biến depositAmount để không bị crash khi selectedCourt là null
   const depositAmount = (selectedCourt && selectedHour)
     ? Math.floor(calculatePrice(selectedCourt, selectedHour, duration) * 0.5)
@@ -296,6 +294,9 @@
       }
     }
   });
+  useEffect(() => {
+  localStorage.setItem("schedule", JSON.stringify(schedule));
+}, [schedule]);
 
     const handleLogin = (e) => {
 
